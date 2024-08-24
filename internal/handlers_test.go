@@ -157,7 +157,7 @@ func TestToSetInternal(t *testing.T) {
 		"success": {
 			arrange: func(ctx context.Context) (context.Context, reflect.Type, reflect.Type, any) {
 				ctx = internal.WithSessionID(ctx, sessionID)
-				aMock.EXPECT().Set(ctx, sessionID, stateType, reducedState).Return(nil)
+				aMock.EXPECT().Set(ctx, sessionID, reducedState).Return(nil)
 				return ctx, stateType, actionType, makeReducer(nil)
 			},
 			assert: func(ctx context.Context, got internal.SetInternal) {
@@ -180,7 +180,7 @@ func TestToSetInternal(t *testing.T) {
 		"access error": {
 			arrange: func(ctx context.Context) (context.Context, reflect.Type, reflect.Type, any) {
 				ctx = internal.WithSessionID(ctx, sessionID)
-				aMock.EXPECT().Set(ctx, sessionID, stateType, reducedState).Return(refErr)
+				aMock.EXPECT().Set(ctx, sessionID, reducedState).Return(refErr)
 				return ctx, stateType, actionType, makeReducer(nil)
 			},
 			assert: func(ctx context.Context, got internal.SetInternal) {

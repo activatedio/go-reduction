@@ -19,9 +19,6 @@ generate_mocks:
 	rm -fr vendor
 	go fmt ./...
 
-release:
-	go install github.com/activatedio/go-release@v0.0.9
-	export
-	go-release perform
-
+test:
+	go test ./...
 

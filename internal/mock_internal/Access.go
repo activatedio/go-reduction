@@ -83,17 +83,17 @@ func (_c *Access_Get_Call) RunAndReturn(run func(context.Context, string, reflec
 	return _c
 }
 
-// Set provides a mock function with given fields: ctx, sessionKey, stateType, state
-func (_m *Access) Set(ctx context.Context, sessionKey string, stateType reflect.Type, state interface{}) error {
-	ret := _m.Called(ctx, sessionKey, stateType, state)
+// Set provides a mock function with given fields: ctx, sessionKey, state
+func (_m *Access) Set(ctx context.Context, sessionKey string, state interface{}) error {
+	ret := _m.Called(ctx, sessionKey, state)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Set")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, reflect.Type, interface{}) error); ok {
-		r0 = rf(ctx, sessionKey, stateType, state)
+	if rf, ok := ret.Get(0).(func(context.Context, string, interface{}) error); ok {
+		r0 = rf(ctx, sessionKey, state)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -109,15 +109,14 @@ type Access_Set_Call struct {
 // Set is a helper method to define mock.On call
 //   - ctx context.Context
 //   - sessionKey string
-//   - stateType reflect.Type
 //   - state interface{}
-func (_e *Access_Expecter) Set(ctx interface{}, sessionKey interface{}, stateType interface{}, state interface{}) *Access_Set_Call {
-	return &Access_Set_Call{Call: _e.mock.On("Set", ctx, sessionKey, stateType, state)}
+func (_e *Access_Expecter) Set(ctx interface{}, sessionKey interface{}, state interface{}) *Access_Set_Call {
+	return &Access_Set_Call{Call: _e.mock.On("Set", ctx, sessionKey, state)}
 }
 
-func (_c *Access_Set_Call) Run(run func(ctx context.Context, sessionKey string, stateType reflect.Type, state interface{})) *Access_Set_Call {
+func (_c *Access_Set_Call) Run(run func(ctx context.Context, sessionKey string, state interface{})) *Access_Set_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(reflect.Type), args[3].(interface{}))
+		run(args[0].(context.Context), args[1].(string), args[2].(interface{}))
 	})
 	return _c
 }
@@ -127,7 +126,7 @@ func (_c *Access_Set_Call) Return(_a0 error) *Access_Set_Call {
 	return _c
 }
 
-func (_c *Access_Set_Call) RunAndReturn(run func(context.Context, string, reflect.Type, interface{}) error) *Access_Set_Call {
+func (_c *Access_Set_Call) RunAndReturn(run func(context.Context, string, interface{}) error) *Access_Set_Call {
 	_c.Call.Return(run)
 	return _c
 }

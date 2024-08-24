@@ -44,7 +44,7 @@ func ToSetInternal(access Access, stateType reflect.Type, actionType reflect.Typ
 
 		resultState := result[0].Interface()
 
-		err = access.Set(ctx, MustGetSessionID(ctx), stateType, resultState)
+		err = access.Set(ctx, MustGetSessionID(ctx), resultState)
 
 		if err != nil {
 			return nil, err
