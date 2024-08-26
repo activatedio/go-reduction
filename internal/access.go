@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"github.com/activatedio/reduction/config"
 	"github.com/activatedio/reduction/util"
 	"github.com/patrickmn/go-cache"
 	"reflect"
@@ -42,7 +43,7 @@ type LocalAccessConfig struct {
 }
 
 func NewLocalAccessConfig() *LocalAccessConfig {
-	expirationStr := util.GetEnv("REDUCTION_LOCAL_ACCESS_EXPIRATION_SECONDS", "1200")
+	expirationStr := util.GetEnv(config.ReductionKeyLocalAccessExpirationSeconds, "1200")
 	expirationSeconds, err := strconv.Atoi(expirationStr)
 	if err != nil {
 		panic(err)
