@@ -27,17 +27,23 @@ type Builder interface {
 }
 
 type ActionDescriptor struct {
-	Path string
+	ActionType reflect.Type
+	Path       string
 }
 
 type StateDescriptor struct {
-	Path    string
-	Actions []*ActionDescriptor
+	StateType reflect.Type
+	Path      string
+	Actions   []*ActionDescriptor
 }
 
 type Reduction interface {
 	Builder() Builder
 	GetStateDescriptors() []*StateDescriptor
-	Set(ctx context.Context, stateType reflect.Type, action any) SetResult
-	Get(ctx context.Context, stateType reflect.Type) GetResult
+	Set(ctx context.Context, stateType reflect.Type, action any) (*SetResult, error)
+	Get(ctx context.Context, stateType reflect.Type) (*GetResult, error)
+}
+
+type Factory interface {
+	NewReduction() Reduction
 }

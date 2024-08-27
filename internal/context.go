@@ -11,7 +11,11 @@ var (
 )
 
 func MustGetSessionID(ctx context.Context) string {
-	return ctx.Value(sessionIDKey).(string)
+	raw := ctx.Value(sessionIDKey)
+	if raw == nil {
+		panic("no session id in context")
+	}
+	return raw.(string)
 }
 
 func WithSessionID(ctx context.Context, sid string) context.Context {

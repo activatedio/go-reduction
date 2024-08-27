@@ -4,16 +4,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/activatedio/reduction/config"
+	reductionfx "github.com/activatedio/reduction/fx"
+	reductionmux "github.com/activatedio/reduction/mux"
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
 	"go.uber.org/fx"
 	"net"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 )
 
 func Wrap(callback func(client *resty.Client), options ...fx.Option) (string, func(t *testing.T)) {
+
+	os.Setenv(config.ReductionKeySessionHMACKey, "test-super-secret")
 
 	var rs RunningServer
 
@@ -60,9 +66,16 @@ func (s *serverDesc) Port() int {
 	return s.port
 }
 
-func NewRouter() *mux.Router {
+type RouterParams struct {
+	fx.In
+	SessionMiddleware reductionmux.Middleware `name:"session"`
+}
+
+func NewRouter(params RouterParams) *mux.Router {
 
 	m := mux.NewRouter()
+
+	m.Use(params.SessionMiddleware.Handle)
 
 	m.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -104,7 +117,7 @@ func NewServer(lifecycle fx.Lifecycle, r *mux.Router) RunningServer {
 }
 
 func NewModule() fx.Option {
-	return fx.Module("e2e.fixture", fx.Provide(
+	return fx.Module("e2e.fixture", reductionfx.Index(), fx.Provide(
 		NewRouter,
 		NewServer,
 	))

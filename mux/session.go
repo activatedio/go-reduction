@@ -42,7 +42,7 @@ func (s *sessionMiddleware) Handle(next http.Handler) http.Handler {
 
 type SessionMiddlewareResult struct {
 	fx.Out
-	Result Middleware `name:"middleware"`
+	Result Middleware `name:"session"`
 }
 
 type SessionMiddlewareConfig struct {
