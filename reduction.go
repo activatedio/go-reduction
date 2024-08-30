@@ -18,6 +18,7 @@ type stateEntry struct {
 	get        internal.GetInternal
 	actions    map[string]*actionEntry
 	init       internal.InitInternal
+	refresh    internal.RefreshInternal
 }
 
 type actionEntry struct {
@@ -26,6 +27,11 @@ type actionEntry struct {
 
 func (s *stateEntry) Init(init any) StateBuilder {
 	s.init = internal.ToInitInternal(s.access, s.t, init)
+	return s
+}
+
+func (s *stateEntry) Refresh(init any) StateBuilder {
+	s.refresh = internal.ToRefreshInternal(s.access, s.t, init)
 	return s
 }
 
@@ -115,9 +121,18 @@ func (r *reduction) doGet(ctx context.Context, stateType reflect.Type) (*stateEn
 		return nil, nil, err
 	}
 	if state == nil {
-		state, err = se.init(ctx)
-		if err != nil {
-			return nil, nil, err
+		if se.init != nil {
+			state, err = se.init(ctx)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+	} else {
+		if se.refresh != nil {
+			state, err = se.refresh(ctx, state)
+			if err != nil {
+				return nil, nil, err
+			}
 		}
 	}
 	return se, state, nil

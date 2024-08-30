@@ -201,3 +201,81 @@ func TestToSetInternal(t *testing.T) {
 		})
 	}
 }
+
+func TestToRefreshInternal(t *testing.T) {
+
+	type s struct {
+		arrange func(ctx context.Context) (context.Context, reflect.Type, any)
+		assert  func(ctx context.Context, got internal.RefreshInternal)
+	}
+
+	var aMock *mock_internal.Access
+
+	refErr := errors.New("test")
+	state := &DummyState{
+		Value: "value1",
+	}
+	reducedState := &DummyState{
+		Value: "value2",
+	}
+	stateType := reflect.TypeOf(state)
+	sessionID := "test-session-id"
+
+	makeRefresher := func(err error) func(ctx context.Context, state *DummyState) (*DummyState, error) {
+		return func(ctx context.Context, state *DummyState) (*DummyState, error) {
+			if err != nil {
+				return nil, err
+			} else {
+				return reducedState, err
+			}
+		}
+	}
+
+	cases := map[string]s{
+		"success": {
+			arrange: func(ctx context.Context) (context.Context, reflect.Type, any) {
+				ctx = internal.WithSessionID(ctx, sessionID)
+				aMock.EXPECT().Set(ctx, sessionID, reducedState).Return(nil)
+				return ctx, stateType, makeRefresher(nil)
+			},
+			assert: func(ctx context.Context, got internal.RefreshInternal) {
+				result, err := got(ctx, state)
+				assert.Nil(t, err)
+				assert.Equal(t, reducedState, result)
+			},
+		},
+		"refresher error": {
+			arrange: func(ctx context.Context) (context.Context, reflect.Type, any) {
+				ctx = internal.WithSessionID(ctx, sessionID)
+				return ctx, stateType, makeRefresher(refErr)
+			},
+			assert: func(ctx context.Context, got internal.RefreshInternal) {
+				result, err := got(ctx, state)
+				assert.Nil(t, result)
+				assert.Equal(t, refErr, err)
+			},
+		},
+		"access error": {
+			arrange: func(ctx context.Context) (context.Context, reflect.Type, any) {
+				ctx = internal.WithSessionID(ctx, sessionID)
+				aMock.EXPECT().Set(ctx, sessionID, reducedState).Return(refErr)
+				return ctx, stateType, makeRefresher(nil)
+			},
+			assert: func(ctx context.Context, got internal.RefreshInternal) {
+				result, err := got(ctx, state)
+				assert.Nil(t, result)
+				assert.Equal(t, refErr, err)
+			},
+		},
+	}
+
+	for k, v := range cases {
+
+		t.Run(k, func(t *testing.T) {
+
+			aMock = mock_internal.NewAccess(t)
+			ctx, st, r := v.arrange(context.Background())
+			v.assert(ctx, internal.ToRefreshInternal(aMock, st, r))
+		})
+	}
+}

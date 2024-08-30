@@ -19,6 +19,7 @@ type GetResult struct {
 
 type StateBuilder interface {
 	Init(init any) StateBuilder
+	Refresh(init any) StateBuilder
 	Action(t reflect.Type, reducer any) StateBuilder
 }
 
