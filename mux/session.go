@@ -1,9 +1,9 @@
 package mux
 
 import (
-	"github.com/activatedio/reduction/config"
-	"github.com/activatedio/reduction/internal"
-	"github.com/activatedio/reduction/util"
+	"github.com/activatedio/go-reduction/config"
+	"github.com/activatedio/go-reduction/internal"
+	"github.com/activatedio/go-reduction/util"
 	"go.uber.org/fx"
 	"math/rand"
 	"net/http"

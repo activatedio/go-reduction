@@ -1,4 +1,4 @@
-module github.com/activatedio/reduction
+module github.com/activatedio/go-reduction
 
 go 1.22.5
 

@@ -1,7 +1,7 @@
 package mux_test
 
 import (
-	"github.com/activatedio/reduction/mux"
+	"github.com/activatedio/go-reduction/mux"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

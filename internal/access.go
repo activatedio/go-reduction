@@ -3,8 +3,8 @@ package internal
 import (
 	"context"
 	"fmt"
-	"github.com/activatedio/reduction/config"
-	"github.com/activatedio/reduction/util"
+	"github.com/activatedio/go-reduction/config"
+	"github.com/activatedio/go-reduction/util"
 	"github.com/patrickmn/go-cache"
 	"reflect"
 	"strconv"

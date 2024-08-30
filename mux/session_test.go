@@ -1,8 +1,8 @@
 package mux_test
 
 import (
-	"github.com/activatedio/reduction/internal"
-	"github.com/activatedio/reduction/mux"
+	"github.com/activatedio/go-reduction/internal"
+	"github.com/activatedio/go-reduction/mux"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"

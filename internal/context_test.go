@@ -2,7 +2,7 @@ package internal_test
 
 import (
 	"context"
-	"github.com/activatedio/reduction/internal"
+	"github.com/activatedio/go-reduction/internal"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

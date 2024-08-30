@@ -2,8 +2,8 @@ package internal_test
 
 import (
 	"context"
-	"github.com/activatedio/reduction/internal"
-	"github.com/activatedio/reduction/internal/mock_internal"
+	"github.com/activatedio/go-reduction/internal"
+	"github.com/activatedio/go-reduction/internal/mock_internal"
 	"github.com/go-errors/errors"
 	"github.com/stretchr/testify/assert"
 	"reflect"

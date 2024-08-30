@@ -3,7 +3,7 @@ package reduction
 import (
 	"context"
 	"fmt"
-	"github.com/activatedio/reduction/internal"
+	"github.com/activatedio/go-reduction/internal"
 	"github.com/go-errors/errors"
 	"github.com/iancoleman/strcase"
 	"go.uber.org/fx"

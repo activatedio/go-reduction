@@ -3,7 +3,7 @@ package mux
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/activatedio/reduction"
+	"github.com/activatedio/go-reduction"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"net/http"

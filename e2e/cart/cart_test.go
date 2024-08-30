@@ -2,9 +2,9 @@ package cart
 
 import (
 	"context"
-	"github.com/activatedio/reduction"
-	"github.com/activatedio/reduction/e2e/support"
-	rmux "github.com/activatedio/reduction/mux"
+	"github.com/activatedio/go-reduction"
+	"github.com/activatedio/go-reduction/e2e/support"
+	rmux "github.com/activatedio/go-reduction/mux"
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
