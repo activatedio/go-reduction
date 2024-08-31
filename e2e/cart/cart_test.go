@@ -50,6 +50,15 @@ func Test_Cart_WithInit(t *testing.T) {
 			ItemCount: 10,
 		}, cart)
 
+		resp, err = client.R().SetResult(cart).SetBody(&AddItem{
+			Qty: 10,
+		}).Post("/cart/add_item")
+		check(err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode())
+		assert.Equal(t, &Cart{
+			ItemCount: 20,
+		}, cart)
+
 	}, fx.Module("fixture", fx.Invoke(func(factory reduction.Factory, router *mux.Router) {
 
 		r := factory.NewReduction()
@@ -92,6 +101,15 @@ func Test_Cart_NoInit(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode())
 		assert.Equal(t, &Cart{
 			ItemCount: 10,
+		}, cart)
+
+		resp, err = client.R().SetResult(cart).SetBody(&AddItem{
+			Qty: 10,
+		}).Post("/cart/add_item")
+		check(err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode())
+		assert.Equal(t, &Cart{
+			ItemCount: 20,
 		}, cart)
 
 	}, fx.Module("fixture", fx.Invoke(func(factory reduction.Factory, router *mux.Router) {

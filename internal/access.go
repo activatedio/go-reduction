@@ -26,7 +26,7 @@ func (l *localAccess) Get(ctx context.Context, sessionKey string, stateType refl
 }
 
 func (l *localAccess) Set(ctx context.Context, sessionKey string, state any) error {
-	key := makeKey(sessionKey, reflect.TypeOf(state))
+	key := makeKey(sessionKey, reflect.ValueOf(state).Elem().Type())
 	l.cache.Set(key, state, cache.DefaultExpiration)
 	return nil
 }

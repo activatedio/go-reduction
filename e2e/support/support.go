@@ -7,6 +7,7 @@ import (
 	"github.com/activatedio/go-reduction/config"
 	reductionfx "github.com/activatedio/go-reduction/fx"
 	reductionmux "github.com/activatedio/go-reduction/mux"
+	reductiontesting "github.com/activatedio/go-reduction/testing"
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
 	"go.uber.org/fx"
@@ -33,7 +34,7 @@ func Wrap(callback func(client *resty.Client), options ...fx.Option) (string, fu
 
 		check(app.Start(ctx))
 
-		r := resty.New().SetBaseURL(fmt.Sprintf("http://%s:%d", rs.Host(), rs.Port()))
+		r := reductiontesting.RestyWithCookieSupport(resty.New().SetBaseURL(fmt.Sprintf("http://%s:%d", rs.Host(), rs.Port())))
 
 		callback(r)
 
