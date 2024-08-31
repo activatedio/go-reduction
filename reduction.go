@@ -126,6 +126,9 @@ func (r *reduction) doGet(ctx context.Context, stateType reflect.Type) (*stateEn
 			if err != nil {
 				return nil, nil, err
 			}
+		} else {
+			// TODO - test this
+			state = reflect.New(se.t).Interface()
 		}
 	} else {
 		if se.refresh != nil {
