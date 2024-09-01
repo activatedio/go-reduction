@@ -37,11 +37,12 @@ func Mount(router *mux.Router, rootPath string, reduction reduction.Reduction) e
 
 				action := reflect.New(a.ActionType).Interface()
 
-				err := json.NewDecoder(r.Body).Decode(action)
-
-				if err != nil {
-					handleError(w, r, err)
-					return
+				if !isEmpty(a.ActionType) {
+					err := json.NewDecoder(r.Body).Decode(action)
+					if err != nil {
+						handleError(w, r, err)
+						return
+					}
 				}
 
 				ctx := r.Context()
@@ -59,6 +60,21 @@ func Mount(router *mux.Router, rootPath string, reduction reduction.Reduction) e
 	}
 
 	return nil
+}
+
+var (
+	emptyType = reflect.TypeFor[reduction.Empty]()
+)
+
+func isEmpty(t reflect.Type) bool {
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		ft := f.Type
+		if ft == emptyType && f.Anonymous {
+			return true
+		}
+	}
+	return false
 }
 
 func handleError(w http.ResponseWriter, r *http.Request, err error) {

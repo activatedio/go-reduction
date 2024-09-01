@@ -5,7 +5,8 @@ import (
 	"reflect"
 )
 
-type Reducer[S any, A any] func(ctx context.Context, state *S, action *A) (*S, error)
+// Empty is a marker struct for an action without any body
+type Empty struct{}
 
 type StateFactory[S any] func(ctx context.Context) (*S, error)
 

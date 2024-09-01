@@ -15,6 +15,7 @@ import (
 )
 
 type Cart struct {
+	Status    string
 	ItemCount int `json:"item_count"`
 }
 
@@ -22,7 +23,11 @@ type AddItem struct {
 	Qty int `json:"qty"`
 }
 
-func Test_Cart_WithInit(t *testing.T) {
+type Place struct {
+	reduction.Empty
+}
+
+func Test_Cart_WithInitNoRefresh(t *testing.T) {
 
 	t.Run(support.Wrap(func(client *resty.Client) {
 
@@ -56,6 +61,14 @@ func Test_Cart_WithInit(t *testing.T) {
 		check(err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode())
 		assert.Equal(t, &Cart{
+			ItemCount: 20,
+		}, cart)
+
+		resp, err = client.R().SetResult(cart).Post("/cart/place")
+		check(err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode())
+		assert.Equal(t, &Cart{
+			Status:    "Placed",
 			ItemCount: 20,
 		}, cart)
 
@@ -68,6 +81,9 @@ func Test_Cart_WithInit(t *testing.T) {
 		}).Action(reflect.TypeFor[AddItem](), func(ctx context.Context, state *Cart, action *AddItem) (*Cart, error) {
 			state.ItemCount = state.ItemCount + action.Qty
 			return state, nil
+		}).Action(reflect.TypeFor[Place](), func(ctx context.Context, state *Cart, action *Place) (*Cart, error) {
+			state.Status = "Placed"
+			return state, nil
 		})
 
 		check(rmux.Mount(router, "", r))
@@ -75,7 +91,7 @@ func Test_Cart_WithInit(t *testing.T) {
 
 }
 
-func Test_Cart_NoInit(t *testing.T) {
+func Test_Cart_NoInitWithRefresh(t *testing.T) {
 
 	t.Run(support.Wrap(func(client *resty.Client) {
 
@@ -109,7 +125,15 @@ func Test_Cart_NoInit(t *testing.T) {
 		check(err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode())
 		assert.Equal(t, &Cart{
-			ItemCount: 20,
+			ItemCount: 21,
+		}, cart)
+
+		resp, err = client.R().SetResult(cart).Post("/cart/place")
+		check(err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode())
+		assert.Equal(t, &Cart{
+			Status:    "Placed",
+			ItemCount: 22,
 		}, cart)
 
 	}, fx.Module("fixture", fx.Invoke(func(factory reduction.Factory, router *mux.Router) {
@@ -117,10 +141,17 @@ func Test_Cart_NoInit(t *testing.T) {
 		r := factory.NewReduction()
 
 		r.Builder().State(reflect.TypeFor[Cart]()).
+			Refresh(func(ctx context.Context, state *Cart) (*Cart, error) {
+				state.ItemCount = state.ItemCount + 1
+				return state, nil
+			}).
 			Action(reflect.TypeFor[AddItem](), func(ctx context.Context, state *Cart, action *AddItem) (*Cart, error) {
 				state.ItemCount = state.ItemCount + action.Qty
 				return state, nil
-			})
+			}).Action(reflect.TypeFor[Place](), func(ctx context.Context, state *Cart, action *Place) (*Cart, error) {
+			state.Status = "Placed"
+			return state, nil
+		})
 
 		check(rmux.Mount(router, "", r))
 	}))))
