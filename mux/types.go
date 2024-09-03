@@ -9,6 +9,6 @@ type Middleware interface {
 type HMAC interface {
 	// Takes an input, calculate the hmac signature and return with signature appended
 	Sign(input string) string
-	// Takes a signed string, checks the hmac signature, and returns 
+	// Takes a signed string, checks the hmac signature, and returns
 	ValidateAndExtract(input string) (bool, string)
 }

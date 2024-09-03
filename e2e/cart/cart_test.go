@@ -8,6 +8,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"github.com/swaggest/openapi-go/openapi3"
 	"go.uber.org/fx"
 	"net/http"
 	"reflect"
@@ -71,6 +72,14 @@ func Test_Cart_WithInitNoRefresh(t *testing.T) {
 			Status:    "Placed",
 			ItemCount: 20,
 		}, cart)
+
+		swaggerResult := &openapi3.Spec{}
+
+		// Test swagger
+		resp, err = client.R().SetResult(swaggerResult).Get("/swagger.json")
+		check(err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode())
+		assert.Len(t, swaggerResult.Paths.MapOfPathItemValues, 3)
 
 	}, fx.Module("fixture", fx.Invoke(func(factory reduction.Factory, router *mux.Router) {
 
