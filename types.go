@@ -34,9 +34,11 @@ type ActionDescriptor struct {
 }
 
 type StateDescriptor struct {
-	StateType reflect.Type
-	Path      string
-	Actions   []*ActionDescriptor
+	StateType    reflect.Type
+	ExportedType reflect.Type
+	Path         string
+	Actions      []*ActionDescriptor
+	Exporter     func(ctx context.Context, in any) (any, error)
 }
 
 type Reduction interface {

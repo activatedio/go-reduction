@@ -9,6 +9,7 @@ type SetInternal func(ctx context.Context, state any, action any) (any, error)
 type GetInternal func(ctx context.Context) (any, error)
 type InitInternal func(ctx context.Context) (any, error)
 type RefreshInternal func(ctx context.Context, state any) (any, error)
+type ExportInternal func(ctx context.Context, state any) (any, error)
 
 func ToInitInternal(access Access, stateType reflect.Type, init any) InitInternal {
 	return func(ctx context.Context) (any, error) {
@@ -67,4 +68,32 @@ func doSet(ctx context.Context, access Access, result []reflect.Value) (any, err
 	}
 
 	return resultState, nil
+}
+
+var (
+	ExportMethodName = "Export"
+)
+
+func ToExportInternal(stateType reflect.Type) ExportInternal {
+
+	_, ok := reflect.PointerTo(stateType).MethodByName(ExportMethodName)
+
+	if ok {
+
+		return func(ctx context.Context, state any) (any, error) {
+			result := reflect.ValueOf(state).MethodByName(ExportMethodName).Call([]reflect.Value{reflect.ValueOf(ctx)})
+
+			eInt := result[1].Interface()
+			var err error
+			if eInt != nil {
+				err = eInt.(error)
+			}
+			return result[0].Interface(), err
+		}
+
+	} else {
+		return func(ctx context.Context, state any) (any, error) {
+			return state, nil
+		}
+	}
 }

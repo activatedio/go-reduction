@@ -68,6 +68,7 @@ func (r *reduction) State(t reflect.Type) StateBuilder {
 		descriptor: &StateDescriptor{
 			StateType: t,
 			Path:      fmt.Sprintf("/%s", name),
+			Exporter:  internal.ToExportInternal(t),
 		},
 		get:     internal.ToGetInternal(r.access, t),
 		actions: map[string]*actionEntry{},

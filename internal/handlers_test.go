@@ -279,3 +279,49 @@ func TestToRefreshInternal(t *testing.T) {
 		})
 	}
 }
+
+func TestToExportInternal(t *testing.T) {
+
+	type s struct {
+		arrange func(ctx context.Context) (context.Context, reflect.Type)
+		assert  func(ctx context.Context, got internal.ExportInternal)
+	}
+
+	// TOOD - more robust handling of method types
+	cases := map[string]s{
+		"not exportable": {
+			arrange: func(ctx context.Context) (context.Context, reflect.Type) {
+				return ctx, reflect.TypeFor[DummyState]()
+			},
+			assert: func(ctx context.Context, got internal.ExportInternal) {
+				in := &DummyState{
+					Value: "value1",
+				}
+				result, err := got(ctx, in)
+				assert.Nil(t, err)
+				assert.Same(t, in, result)
+			},
+		},
+		"exportable": {
+			arrange: func(ctx context.Context) (context.Context, reflect.Type) {
+				return ctx, reflect.TypeFor[DummyExportableState]()
+			},
+			assert: func(ctx context.Context, got internal.ExportInternal) {
+				in := &DummyExportableState{
+					Value: "value1",
+				}
+				result, err := got(ctx, in)
+				assert.Nil(t, err)
+				assert.Equal(t, &DummyExportedState{Value: in.Value + "-exported"}, result)
+			},
+		},
+	}
+
+	for k, v := range cases {
+		t.Run(k, func(t *testing.T) {
+
+			ctx, st := v.arrange(context.Background())
+			v.assert(ctx, internal.ToExportInternal(st))
+		})
+	}
+}

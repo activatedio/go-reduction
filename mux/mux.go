@@ -34,8 +34,16 @@ func Mount(router *mux.Router, rootPath string, reduction reduction.Reduction) e
 				return
 			}
 
+			exported, err := descriptor.Exporter(ctx, state.State)
+
+			if err != nil {
+				// TODO - unit test this
+				handleError(w, r, err)
+				return
+			}
+
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			json.NewEncoder(w).Encode(state.State)
+			json.NewEncoder(w).Encode(exported)
 		})
 
 		if err := addStateOperation(statePath, reflector, descriptor); err != nil {
@@ -65,8 +73,16 @@ func Mount(router *mux.Router, rootPath string, reduction reduction.Reduction) e
 					return
 				}
 
+				exported, err := descriptor.Exporter(ctx, state.State)
+
+				if err != nil {
+					// TODO - unit test this
+					handleError(w, r, err)
+					return
+				}
+
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				json.NewEncoder(w).Encode(state.State)
+				json.NewEncoder(w).Encode(exported)
 			})
 
 			if err := addActionOperation(actionPath, reflector, descriptor, a); err != nil {
@@ -96,7 +112,7 @@ func addStateOperation(path string, reflector *openapi3.Reflector, descriptor *r
 		return err
 	}
 
-	oc.AddRespStructure(reflect.New(descriptor.StateType).Interface())
+	oc.AddRespStructure(reflect.New(exportableType(descriptor.StateType)).Interface())
 
 	return reflector.AddOperation(oc)
 }
@@ -109,7 +125,7 @@ func addActionOperation(path string, reflector *openapi3.Reflector, stateDescrip
 		return err
 	}
 
-	oc.AddRespStructure(reflect.New(stateDescriptor.StateType).Interface())
+	oc.AddRespStructure(reflect.New(exportableType(stateDescriptor.StateType)).Interface())
 	oc.AddReqStructure(reflect.New(actionDescriptor.ActionType).Interface())
 
 	return reflector.AddOperation(oc)
@@ -135,4 +151,16 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+}
+
+var (
+	ExportMethodName = "Export"
+)
+
+func exportableType(typ reflect.Type) reflect.Type {
+	if m, ok := reflect.PointerTo(typ).MethodByName(ExportMethodName); ok {
+		return m.Func.Type().Out(0)
+	} else {
+		return typ
+	}
 }

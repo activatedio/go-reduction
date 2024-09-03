@@ -167,6 +167,68 @@ func Test_Cart_NoInitWithRefresh(t *testing.T) {
 
 }
 
+type ExportableCart struct {
+	Status string `json:"status"`
+}
+
+func (e *ExportableCart) Export(ctx context.Context) (*ExportedCart, error) {
+	return &ExportedCart{
+		ExportedStatus: "exported",
+	}, nil
+}
+
+type ExportedCart struct {
+	ExportedStatus string `json:"exported_status"`
+}
+
+func Test_ExportableCart_WithInit(t *testing.T) {
+
+	t.Run(support.Wrap(func(client *resty.Client) {
+
+		newExportedCart := func() *ExportedCart {
+			return &ExportedCart{}
+		}
+
+		cart := newExportedCart()
+
+		resp, err := client.R().SetResult(cart).Get("/exportable_cart")
+		check(err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode())
+		assert.Equal(t, &ExportedCart{
+			ExportedStatus: "exported",
+		}, cart)
+
+		resp, err = client.R().SetResult(cart).Post("/exportable_cart/place")
+		check(err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode())
+		assert.Equal(t, &ExportedCart{
+			ExportedStatus: "exported",
+		}, cart)
+
+		swaggerResult := &openapi3.Spec{}
+
+		// Test swagger
+		resp, err = client.R().SetResult(swaggerResult).Get("/swagger.json")
+		check(err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode())
+		// TODO - test the exported type
+		assert.Len(t, swaggerResult.Paths.MapOfPathItemValues, 2)
+
+	}, fx.Module("fixture", fx.Invoke(func(factory reduction.Factory, router *mux.Router) {
+
+		r := factory.NewReduction()
+
+		r.Builder().State(reflect.TypeFor[ExportableCart]()).Init(func(ctx context.Context) (*ExportableCart, error) {
+			return &ExportableCart{Status: "init"}, nil
+		}).Action(reflect.TypeFor[Place](), func(ctx context.Context, state *ExportableCart, action *Place) (*ExportableCart, error) {
+			return state, nil
+		})
+
+		check(rmux.Mount(router, "", r))
+	}))))
+
+}
+
 func check(err error) {
 	if err != nil {
 		panic(err)
