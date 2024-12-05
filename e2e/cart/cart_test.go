@@ -2,6 +2,7 @@ package cart
 
 import (
 	"context"
+	"errors"
 	"github.com/activatedio/go-reduction"
 	"github.com/activatedio/go-reduction/e2e/support"
 	rmux "github.com/activatedio/go-reduction/mux"
@@ -24,8 +25,16 @@ type AddItem struct {
 	Qty int `json:"qty"`
 }
 
+type ThrowError struct {
+	reduction.Empty
+}
+
 type Place struct {
 	reduction.Empty
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
 }
 
 func Test_Cart_WithInitNoRefresh(t *testing.T) {
@@ -73,13 +82,22 @@ func Test_Cart_WithInitNoRefresh(t *testing.T) {
 			ItemCount: 20,
 		}, cart)
 
+		errResp := &ErrorResponse{}
+
+		resp, err = client.R().SetError(errResp).Post("/cart/throw_error")
+		check(err)
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode())
+		assert.Equal(t, &ErrorResponse{
+			Error: "throw error message",
+		}, errResp)
+
 		swaggerResult := &openapi3.Spec{}
 
 		// Test swagger
 		resp, err = client.R().SetResult(swaggerResult).Get("/swagger.json")
 		check(err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode())
-		assert.Len(t, swaggerResult.Paths.MapOfPathItemValues, 3)
+		assert.Len(t, swaggerResult.Paths.MapOfPathItemValues, 4)
 
 	}, fx.Module("fixture", fx.Invoke(func(factory reduction.Factory, router *mux.Router) {
 
@@ -93,6 +111,8 @@ func Test_Cart_WithInitNoRefresh(t *testing.T) {
 		}).Action(reflect.TypeFor[Place](), func(ctx context.Context, state *Cart, action *Place) (*Cart, error) {
 			state.Status = "Placed"
 			return state, nil
+		}).Action(reflect.TypeFor[ThrowError](), func(ctx context.Context, state *Cart, action *ThrowError) (*Cart, error) {
+			return nil, errors.New("throw error message")
 		})
 
 		check(rmux.Mount(router, "", r))

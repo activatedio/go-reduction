@@ -148,8 +148,8 @@ func isEmpty(t reflect.Type) bool {
 
 func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	log.Error().Err(err)
+	w.Header().Set("Content-Type", "application/json;")
 	w.WriteHeader(http.StatusInternalServerError)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 }
 
