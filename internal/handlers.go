@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"reflect"
@@ -126,10 +125,9 @@ func logInternal(ctx context.Context, opts ...logOption) {
 	}
 
 	if evt.operation != "" {
-		ze.Msg(fmt.Sprintf("operation %s", msg()))
-	} else {
-		ze.Msg(msg())
+		ze = ze.Str("operation", evt.operation)
 	}
+	ze.Msg(msg())
 }
 
 type logBuilder struct {

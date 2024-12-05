@@ -23,7 +23,9 @@ func TestToInitInternal(t *testing.T) {
 		Value: "value1",
 	}
 
-	refCtx := context.Background()
+	sessionID := "test-session-id"
+
+	refCtx := internal.WithSessionID(context.Background(), sessionID)
 	refErr := errors.New("test")
 
 	cases := map[string]s{
@@ -287,7 +289,8 @@ func TestToExportInternal(t *testing.T) {
 		assert  func(ctx context.Context, got internal.ExportInternal)
 	}
 
-	// TOOD - more robust handling of method types
+	sessionID := "test-session-id"
+
 	cases := map[string]s{
 		"not exportable": {
 			arrange: func(ctx context.Context) (context.Context, reflect.Type) {
@@ -320,7 +323,7 @@ func TestToExportInternal(t *testing.T) {
 	for k, v := range cases {
 		t.Run(k, func(t *testing.T) {
 
-			ctx, st := v.arrange(context.Background())
+			ctx, st := v.arrange(internal.WithSessionID(context.Background(), sessionID))
 			v.assert(ctx, internal.ToExportInternal(st))
 		})
 	}
