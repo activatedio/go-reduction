@@ -10,6 +10,7 @@ import (
 	reductiontesting "github.com/activatedio/go-reduction/testing"
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog"
 	"go.uber.org/fx"
 	"net"
 	"net/http"
@@ -17,6 +18,10 @@ import (
 	"testing"
 	"time"
 )
+
+func init() {
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+}
 
 func Wrap(callback func(client *resty.Client), options ...fx.Option) (string, func(t *testing.T)) {
 

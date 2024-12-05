@@ -19,6 +19,9 @@ generate_mocks:
 	rm -fr vendor
 	go fmt ./...
 
+nix_shell:
+	nix-shell default.nix --command $${SHELL}
+
 test:
 	go test ./...
 
