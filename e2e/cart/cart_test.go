@@ -115,7 +115,7 @@ func Test_Cart_WithInitNoRefresh(t *testing.T) {
 			return nil, errors.New("throw error message")
 		})
 
-		check(rmux.Mount(router, "", r))
+		check(rmux.Mount(router, "", "", r))
 	}))))
 
 }
@@ -182,7 +182,7 @@ func Test_Cart_NoInitWithRefresh(t *testing.T) {
 			return state, nil
 		})
 
-		check(rmux.Mount(router, "", r))
+		check(rmux.Mount(router, "", "", r))
 	}))))
 
 }
@@ -244,7 +244,7 @@ func Test_ExportableCart_WithInit(t *testing.T) {
 			return state, nil
 		})
 
-		check(rmux.Mount(router, "", r))
+		check(rmux.Mount(router, "", "", r))
 	}))))
 
 }

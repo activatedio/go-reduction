@@ -11,7 +11,7 @@ import (
 	"reflect"
 )
 
-func Mount(router *mux.Router, rootPath string, reduction reduction.Reduction) error {
+func Mount(router *mux.Router, rootPath string, swaggerRootPath string, reduction reduction.Reduction) error {
 
 	reflector := openapi3.NewReflector()
 
@@ -46,7 +46,8 @@ func Mount(router *mux.Router, rootPath string, reduction reduction.Reduction) e
 			json.NewEncoder(w).Encode(exported)
 		})
 
-		if err := addStateOperation(statePath, reflector, descriptor); err != nil {
+		swaggerStatePath := swaggerRootPath + descriptor.Path
+		if err := addStateOperation(swaggerStatePath, reflector, descriptor); err != nil {
 			panic(err)
 		}
 
@@ -85,7 +86,8 @@ func Mount(router *mux.Router, rootPath string, reduction reduction.Reduction) e
 				json.NewEncoder(w).Encode(exported)
 			})
 
-			if err := addActionOperation(actionPath, reflector, descriptor, a); err != nil {
+			swaggerActionPath := fmt.Sprintf("%s/%s", swaggerStatePath, a.Path)
+			if err := addActionOperation(swaggerActionPath, reflector, descriptor, a); err != nil {
 				panic(err)
 			}
 		}
