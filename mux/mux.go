@@ -6,9 +6,19 @@ import (
 	"github.com/activatedio/go-reduction"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
+	"github.com/swaggest/openapi-go"
 	"github.com/swaggest/openapi-go/openapi3"
 	"net/http"
 	"reflect"
+)
+
+var (
+	contentTypeApplicationJSON = "application/json"
+	cuOptionsJsonSuccess       = []openapi.ContentOption{openapi.WithContentType(contentTypeApplicationJSON), openapi.WithHTTPStatus(http.StatusOK)}
+	cuOptionsJsonDefault       = []openapi.ContentOption{openapi.WithContentType(contentTypeApplicationJSON), func(cu *openapi.ContentUnit) {
+		cu.IsDefault = true
+		cu.Description = "Error"
+	}}
 )
 
 func Mount(router *mux.Router, rootPath string, swaggerRootPath string, reduction reduction.Reduction) error {
@@ -114,9 +124,16 @@ func addStateOperation(path string, reflector *openapi3.Reflector, descriptor *r
 		return err
 	}
 
-	oc.AddRespStructure(reflect.New(exportableType(descriptor.StateType)).Interface())
+	oc.AddRespStructure(reflect.New(exportableType(descriptor.StateType)).Interface(), cuOptionsJsonSuccess...)
+	oc.AddRespStructure(&Error{}, cuOptionsJsonDefault...)
 
-	return reflector.AddOperation(oc)
+	err = reflector.AddOperation(oc)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func addActionOperation(path string, reflector *openapi3.Reflector, stateDescriptor *reduction.StateDescriptor, actionDescriptor *reduction.ActionDescriptor) error {
@@ -127,8 +144,9 @@ func addActionOperation(path string, reflector *openapi3.Reflector, stateDescrip
 		return err
 	}
 
-	oc.AddRespStructure(reflect.New(exportableType(stateDescriptor.StateType)).Interface())
-	oc.AddReqStructure(reflect.New(actionDescriptor.ActionType).Interface())
+	oc.AddRespStructure(reflect.New(exportableType(stateDescriptor.StateType)).Interface(), cuOptionsJsonSuccess...)
+	oc.AddReqStructure(reflect.New(actionDescriptor.ActionType).Interface(), cuOptionsJsonSuccess...)
+	oc.AddRespStructure(&Error{}, cuOptionsJsonDefault...)
 
 	return reflector.AddOperation(oc)
 }
@@ -152,7 +170,8 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	log.Error().Err(err)
 	w.Header().Set("Content-Type", "application/json;")
 	w.WriteHeader(http.StatusInternalServerError)
-	json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+	// TODO - let's make this better
+	json.NewEncoder(w).Encode(&Error{Error: err.Error()})
 }
 
 var (

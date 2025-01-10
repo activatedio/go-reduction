@@ -7,4 +7,8 @@ stdenv.mkDerivation {
     gnumake
   ];
   hardeningDisable = [ "fortify" ];
+  shellHook = ''
+    export GOPATH=$HOME/go
+    export PATH=$PATH:$HOME/go/bin
+  '';
 }
