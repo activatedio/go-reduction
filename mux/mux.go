@@ -110,7 +110,7 @@ func Mount(router *mux.Router, reduction reduction.Reduction, opts MountOptions)
 	}
 
 	if opts.ReflectorBuilder != nil {
-		err := opts.ReflectorBuilder(opts.RootPath, reflector)
+		err := opts.ReflectorBuilder(opts.SwaggerRootPath, reflector)
 		if err != nil {
 			return err
 		}
