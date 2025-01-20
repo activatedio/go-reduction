@@ -115,7 +115,7 @@ func Test_Cart_WithInitNoRefresh(t *testing.T) {
 			return nil, errors.New("throw error message")
 		})
 
-		check(rmux.Mount(router, "", "", r))
+		check(rmux.Mount(router, r, rmux.MountOptions{}))
 	}))))
 
 }
@@ -182,7 +182,7 @@ func Test_Cart_NoInitWithRefresh(t *testing.T) {
 			return state, nil
 		})
 
-		check(rmux.Mount(router, "", "", r))
+		check(rmux.Mount(router, r, rmux.MountOptions{}))
 	}))))
 
 }
@@ -199,6 +199,14 @@ func (e *ExportableCart) Export(ctx context.Context) (*ExportedCart, error) {
 
 type ExportedCart struct {
 	ExportedStatus string `json:"exported_status"`
+}
+
+type DummyRequest struct {
+	Value1 string `json:"value1"`
+}
+
+type DummyResponse struct {
+	Value2 string `json:"value2"`
 }
 
 func Test_ExportableCart_WithInit(t *testing.T) {
@@ -232,7 +240,7 @@ func Test_ExportableCart_WithInit(t *testing.T) {
 		check(err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode())
 		// TODO - test the exported type
-		assert.Len(t, swaggerResult.Paths.MapOfPathItemValues, 2)
+		assert.Len(t, swaggerResult.Paths.MapOfPathItemValues, 3)
 
 	}, fx.Module("fixture", fx.Invoke(func(factory reduction.Factory, router *mux.Router) {
 
@@ -244,7 +252,22 @@ func Test_ExportableCart_WithInit(t *testing.T) {
 			return state, nil
 		})
 
-		check(rmux.Mount(router, "", "", r))
+		check(rmux.Mount(router, r, rmux.MountOptions{
+			ReflectorBuilder: func(rootPath string, reflector *openapi3.Reflector) error {
+
+				oc, err := reflector.NewOperationContext(http.MethodPost, "/test-post")
+
+				oc.AddReqStructure(&DummyRequest{})
+				oc.AddRespStructure(&DummyResponse{})
+
+				if err != nil {
+					return err
+				}
+
+				return reflector.AddOperation(oc)
+
+			},
+		}))
 	}))))
 
 }

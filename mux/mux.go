@@ -21,7 +21,13 @@ var (
 	}}
 )
 
-func Mount(router *mux.Router, rootPath string, swaggerRootPath string, reduction reduction.Reduction) error {
+type MountOptions struct {
+	RootPath         string
+	SwaggerRootPath  string
+	ReflectorBuilder func(rootPath string, reflector *openapi3.Reflector) error
+}
+
+func Mount(router *mux.Router, reduction reduction.Reduction, opts MountOptions) error {
 
 	reflector := openapi3.NewReflector()
 
@@ -30,7 +36,7 @@ func Mount(router *mux.Router, rootPath string, swaggerRootPath string, reductio
 	reflector.SpecSchema().SetDescription("Reduction API")
 
 	for _, descriptor := range reduction.GetStateDescriptors() {
-		statePath := rootPath + descriptor.Path
+		statePath := opts.RootPath + descriptor.Path
 		stateRoute := router.Path(statePath)
 		stateRoute.Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -56,7 +62,7 @@ func Mount(router *mux.Router, rootPath string, swaggerRootPath string, reductio
 			json.NewEncoder(w).Encode(exported)
 		})
 
-		swaggerStatePath := swaggerRootPath + descriptor.Path
+		swaggerStatePath := opts.SwaggerRootPath + descriptor.Path
 		if err := addStateOperation(swaggerStatePath, reflector, descriptor); err != nil {
 			panic(err)
 		}
@@ -103,12 +109,19 @@ func Mount(router *mux.Router, rootPath string, swaggerRootPath string, reductio
 		}
 	}
 
+	if opts.ReflectorBuilder != nil {
+		err := opts.ReflectorBuilder(opts.RootPath, reflector)
+		if err != nil {
+			return err
+		}
+	}
+
 	swagger, err := reflector.Spec.MarshalJSON()
 	if err != nil {
 		return err
 	}
 
-	router.Path(fmt.Sprintf("%s/swagger.json", rootPath)).Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	router.Path(fmt.Sprintf("%s/swagger.json", opts.RootPath)).Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Write(swagger)
 	})
