@@ -21,10 +21,12 @@ var (
 	}}
 )
 
+type ReflectorBuilder func(rootPath string, reflector *openapi3.Reflector) error
+
 type MountOptions struct {
 	RootPath         string
 	SwaggerRootPath  string
-	ReflectorBuilder func(rootPath string, reflector *openapi3.Reflector) error
+	ReflectorBuilder ReflectorBuilder
 }
 
 func Mount(router *mux.Router, reduction reduction.Reduction, opts MountOptions) error {
