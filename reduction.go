@@ -92,22 +92,40 @@ func (r *reduction) Builder() Builder {
 }
 
 func (r *reduction) Set(ctx context.Context, stateType reflect.Type, action any) (*SetResult, error) {
-	actionName := toTypeName(reflect.TypeOf(reflect.ValueOf(action).Elem().Interface()))
-	se, state, err := r.doGet(ctx, stateType)
+	var out *SetResult
+	err := r.inTx(ctx, func(ctx context.Context) error {
+		actionName := toTypeName(reflect.TypeOf(reflect.ValueOf(action).Elem().Interface()))
+		se, state, err := r.doGet(ctx, stateType)
+		if err != nil {
+			return err
+		}
+		ae, ok := se.actions[actionName]
+		if !ok {
+			return errors.New(fmt.Sprintf("action %s for state %s not found", actionName, se.typeName))
+		}
+		state, err = ae.set(ctx, state, action)
+		if err != nil {
+			return err
+		}
+		out = &SetResult{State: state}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	ae, ok := se.actions[actionName]
-	if !ok {
-		return nil, errors.New(fmt.Sprintf("action %s for state %s not found", actionName, se.typeName))
+	return out, nil
+}
+
+// inTx runs fn with the key checked, inside the store's transaction when it
+// has one (TxStore).
+func (r *reduction) inTx(ctx context.Context, fn func(ctx context.Context) error) error {
+	if _, ok := internal.SessionID(ctx); !ok {
+		return ErrNoKey
 	}
-	state, err = ae.set(ctx, state, action)
-	if err != nil {
-		return nil, err
+	if tx, ok := r.access.(internal.TxAccess); ok {
+		return tx.InTx(ctx, fn)
 	}
-	return &SetResult{
-		State: state,
-	}, nil
+	return fn(ctx)
 }
 
 // doGet returns an internal stateEntry for use by tother methods
@@ -143,14 +161,19 @@ func (r *reduction) doGet(ctx context.Context, stateType reflect.Type) (*stateEn
 }
 
 func (r *reduction) Get(ctx context.Context, stateType reflect.Type) (*GetResult, error) {
-	_, state, err := r.doGet(ctx, stateType)
+	var out *GetResult
+	err := r.inTx(ctx, func(ctx context.Context) error {
+		_, state, err := r.doGet(ctx, stateType)
+		if err != nil {
+			return err
+		}
+		out = &GetResult{State: state}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	} else {
-		return &GetResult{
-			State: state,
-		}, nil
 	}
+	return out, nil
 }
 
 type reductionParams struct {

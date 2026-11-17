@@ -2,6 +2,7 @@ package mux
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/activatedio/go-reduction"
 	"github.com/gorilla/mux"
@@ -27,6 +28,25 @@ type MountOptions struct {
 	RootPath         string
 	SwaggerRootPath  string
 	ReflectorBuilder ReflectorBuilder
+	// KeyFunc, when set, names whose state a request reads and writes (the
+	// signed-in person, say), in place of the session cookie. An error or
+	// an empty key answers 401 and runs nothing.
+	KeyFunc func(r *http.Request) (string, error)
+}
+
+// withKey wraps h with opts.KeyFunc, when there is one.
+func withKey(opts MountOptions, h http.HandlerFunc) http.HandlerFunc {
+	if opts.KeyFunc == nil {
+		return h
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		key, err := opts.KeyFunc(r)
+		if err != nil || key == "" {
+			writeError(w, http.StatusUnauthorized, &Error{Error: "unauthorized"})
+			return
+		}
+		h(w, r.WithContext(reduction.WithKey(r.Context(), key)))
+	}
 }
 
 func Mount(router *mux.Router, reduction reduction.Reduction, opts MountOptions) error {
@@ -40,7 +60,7 @@ func Mount(router *mux.Router, reduction reduction.Reduction, opts MountOptions)
 	for _, descriptor := range reduction.GetStateDescriptors() {
 		statePath := opts.RootPath + descriptor.Path
 		stateRoute := router.Path(statePath)
-		stateRoute.Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		stateRoute.Methods(http.MethodGet).HandlerFunc(withKey(opts, func(w http.ResponseWriter, r *http.Request) {
 
 			log.Info().Msg("state method")
 
@@ -62,7 +82,7 @@ func Mount(router *mux.Router, reduction reduction.Reduction, opts MountOptions)
 
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			json.NewEncoder(w).Encode(exported)
-		})
+		}))
 
 		swaggerStatePath := opts.SwaggerRootPath + descriptor.Path
 		if err := addStateOperation(swaggerStatePath, reflector, descriptor); err != nil {
@@ -71,7 +91,7 @@ func Mount(router *mux.Router, reduction reduction.Reduction, opts MountOptions)
 
 		for _, a := range descriptor.Actions {
 			actionPath := fmt.Sprintf("%s/%s", statePath, a.Path)
-			router.Path(actionPath).Methods(http.MethodPost).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			router.Path(actionPath).Methods(http.MethodPost).HandlerFunc(withKey(opts, func(w http.ResponseWriter, r *http.Request) {
 				log.Info().Msg("action method")
 
 				action := reflect.New(a.ActionType).Interface()
@@ -79,7 +99,7 @@ func Mount(router *mux.Router, reduction reduction.Reduction, opts MountOptions)
 				if !isEmpty(a.ActionType) {
 					err := json.NewDecoder(r.Body).Decode(action)
 					if err != nil {
-						handleError(w, r, err)
+						writeError(w, http.StatusBadRequest, &Error{Error: "the request body is not a valid " + a.Path})
 						return
 					}
 				}
@@ -102,7 +122,7 @@ func Mount(router *mux.Router, reduction reduction.Reduction, opts MountOptions)
 
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
 				json.NewEncoder(w).Encode(exported)
-			})
+			}))
 
 			swaggerActionPath := fmt.Sprintf("%s/%s", swaggerStatePath, a.Path)
 			if err := addActionOperation(swaggerActionPath, reflector, descriptor, a); err != nil {
@@ -181,12 +201,27 @@ func isEmpty(t reflect.Type) bool {
 	return false
 }
 
+// handleError answers a StatusError (a FieldError, a NotAllowedError, any
+// error with HTTPStatus) with its status, and any other error with 500.
 func handleError(w http.ResponseWriter, r *http.Request, err error) {
-	log.Error().Err(err)
-	w.Header().Set("Content-Type", "application/json;")
-	w.WriteHeader(http.StatusInternalServerError)
-	// TODO - let's make this better
-	json.NewEncoder(w).Encode(&Error{Error: err.Error()})
+	var fe *reduction.FieldError
+	if errors.As(err, &fe) {
+		writeError(w, fe.HTTPStatus(), &Error{Error: fe.Message, Field: fe.Field})
+		return
+	}
+	var se reduction.StatusError
+	if errors.As(err, &se) {
+		writeError(w, se.HTTPStatus(), &Error{Error: se.Error()})
+		return
+	}
+	log.Error().Err(err).Msg("reduction")
+	writeError(w, http.StatusInternalServerError, &Error{Error: err.Error()})
+}
+
+func writeError(w http.ResponseWriter, status int, body *Error) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(body)
 }
 
 var (

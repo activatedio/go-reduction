@@ -4,6 +4,8 @@ import "net/http"
 
 type Error struct {
 	Error string `json:"error,omitempty"`
+	// Field names the action's field a 400 is about, when it is about one.
+	Field string `json:"field,omitempty"`
 }
 
 type Middleware interface {
