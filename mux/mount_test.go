@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -118,9 +119,13 @@ func TestMount_ErrorStatuses(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, code)
 	assert.Equal(t, map[string]any{"error": "not yours"}, body)
 
+	// A server fault: a fixed sentence and a reference, never its text.
 	code, body = call(h, http.MethodPost, "/api/steps/broken", "alice", "")
 	assert.Equal(t, http.StatusInternalServerError, code)
-	assert.Equal(t, map[string]any{"error": "broken"}, body)
+	ref, _ := body["ref"].(string)
+	assert.Len(t, ref, 12)
+	assert.Equal(t, map[string]any{"error": "something went wrong on our side; try again (reference " + ref + ")", "ref": ref}, body)
+	assert.NotContains(t, fmt.Sprint(body), "broken")
 
 	// The failed actions left the state as it was.
 	_, body = call(h, http.MethodGet, "/api/steps", "alice", "")

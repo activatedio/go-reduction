@@ -6,6 +6,8 @@ type Error struct {
 	Error string `json:"error,omitempty"`
 	// Field names the action's field a 400 is about, when it is about one.
 	Field string `json:"field,omitempty"`
+	// Ref is a server fault's reference, under which its detail is logged.
+	Ref string `json:"ref,omitempty"`
 }
 
 type Middleware interface {

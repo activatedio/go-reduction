@@ -13,6 +13,7 @@ import (
 	"go.uber.org/fx"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -86,10 +87,10 @@ func Test_Cart_WithInitNoRefresh(t *testing.T) {
 
 		resp, err = client.R().SetError(errResp).Post("/cart/throw_error")
 		check(err)
+		// A plain error is a server fault: the caller never sees its text.
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode())
-		assert.Equal(t, &ErrorResponse{
-			Error: "throw error message",
-		}, errResp)
+		assert.True(t, strings.HasPrefix(errResp.Error, "something went wrong on our side; try again (reference "), errResp.Error)
+		assert.NotContains(t, errResp.Error, "throw error message")
 
 		swaggerResult := &openapi3.Spec{}
 

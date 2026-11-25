@@ -1,6 +1,8 @@
 package mux
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -214,8 +216,24 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, se.HTTPStatus(), &Error{Error: se.Error()})
 		return
 	}
-	log.Error().Err(err).Msg("reduction")
-	writeError(w, http.StatusInternalServerError, &Error{Error: err.Error()})
+	// Anything else is a fault on the server's side: its text (a database
+	// error, an address, a path) never reaches the caller. The caller gets a
+	// fixed sentence and a reference; the detail is logged once under it.
+	ref := newRef()
+	log.Error().Err(err).Str("ref", ref).Msg("reduction")
+	writeError(w, http.StatusInternalServerError, &Error{Error: InternalErrorMessage + " (reference " + ref + ")", Ref: ref})
+}
+
+// InternalErrorMessage is what a caller is told about a server fault.
+const InternalErrorMessage = "something went wrong on our side; try again"
+
+// newRef is a short random reference for a logged fault.
+func newRef() string {
+	b := make([]byte, 6)
+	if _, err := rand.Read(b); err != nil {
+		return "unknown"
+	}
+	return hex.EncodeToString(b)
 }
 
 func writeError(w http.ResponseWriter, status int, body *Error) {
